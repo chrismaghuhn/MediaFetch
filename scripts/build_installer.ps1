@@ -5,10 +5,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$DistExe = Join-Path $Root "dist\MediaFetch.exe"
+$DistDir = Join-Path $Root "dist\MediaFetch"
+$DistExe = Join-Path $DistDir "MediaFetch.exe"
 
 if (-not (Test-Path $DistExe)) {
-    Write-Host "dist\MediaFetch.exe not found — running build first..."
+    Write-Host "dist\MediaFetch\MediaFetch.exe not found — running build first..."
     python (Join-Path $Root "scripts\build.py")
 }
 

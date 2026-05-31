@@ -15,7 +15,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 BUILD = ROOT / "build"
 DIST = ROOT / "dist"
+APP_DIR = DIST / "MediaFetch"
 SPEC = BUILD / "mediafetch.spec"
+EXTERNAL_BINARIES = ("ffmpeg.exe", "yt-dlp.exe")
+APP_ICON = ROOT / "resources" / "icons" / "mediafetch.ico"
+APP_ICON_PNG = ROOT / "resources" / "icons" / "mediafetch.png"
 
 
 def read_version() -> tuple[str, int]:
@@ -93,7 +97,50 @@ def run_pyinstaller(version_info: Path) -> None:
     subprocess.run(cmd, cwd=ROOT, check=True, env=env)
 
 
-def sign_exe(exe: Path, cert_path: str) -> None:
+def find_app_exe() -> Path:
+    """Return the onedir launcher (dist/MediaFetch/MediaFetch.exe)."""
+    exe = APP_DIR / "MediaFetch.exe"
+    if exe.is_file():
+        return exe
+    legacy = DIST / "MediaFetch.exe"
+    if legacy.is_file():
+        return legacy
+    raise FileNotFoundError("MediaFetch.exe not found under dist/")
+
+
+def copy_external_binaries(app_dir: Path) -> None:
+    """Place FFmpeg and yt-dlp beside the frozen exe for stable exe_dir()/bin/ paths."""
+    src_dir = ROOT / "resources" / "bin"
+    dest_dir = app_dir / "bin"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for name in EXTERNAL_BINARIES:
+        src = src_dir / name
+        if src.is_file():
+            shutil.copy2(src, dest_dir / name)
+            copied += 1
+    if copied:
+        print(f"Copied {copied} binary helper(s) to {dest_dir}")
+    else:
+        print(
+            "Warning: no ffmpeg.exe or yt-dlp.exe in resources/bin — "
+            "run scripts/setup_dev.ps1 or build/build_release.ps1 first.",
+            file=sys.stderr,
+        )
+
+
+def ensure_app_icon() -> None:
+    if APP_ICON.is_file():
+        return
+    if APP_ICON_PNG.is_file():
+        print("mediafetch.ico missing — generating from mediafetch.png...")
+        subprocess.run([sys.executable, str(ROOT / "scripts" / "generate_icon.py")], check=True)
+        return
+    print(
+        "Warning: no app icon at resources/icons/mediafetch.ico — "
+        "PyInstaller and Inno Setup will build without a custom icon.",
+        file=sys.stderr,
+    )
     """Optional code signing with signtool (requires Windows SDK)."""
     subprocess.run(
         ["signtool", "sign", "/fd", "SHA256", "/f", cert_path, str(exe)],
@@ -113,20 +160,19 @@ def main() -> int:
     if not args.no_clean:
         clean()
 
+    ensure_app_icon()
     version_info = write_version_info(version)
     run_pyinstaller(version_info)
 
-    exe = DIST / "MediaFetch.exe"
-    if not exe.is_file():
-        # onedir fallback name
-        alt = DIST / "MediaFetch" / "MediaFetch.exe"
-        if alt.is_file():
-            exe = alt
-        else:
-            print("ERROR: MediaFetch.exe not found in dist/", file=sys.stderr)
-            return 1
+    try:
+        exe = find_app_exe()
+    except FileNotFoundError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
-    print(f"Build output: {exe}")
+    copy_external_binaries(exe.parent)
+    print(f"Build output: {exe.parent}")
+    print(f"Launcher:     {exe}")
 
     if args.sign:
         sign_exe(exe, args.sign)

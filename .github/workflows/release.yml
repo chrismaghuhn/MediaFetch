@@ -48,11 +48,17 @@ jobs:
         shell: pwsh
         run: .\scripts\build_installer.ps1
 
+      - name: Package portable folder
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path src/version.py -Pattern '__version__\s*=\s*"([^"]+)"').Matches.Groups[1].Value
+          Compress-Archive -Path dist/MediaFetch -DestinationPath "dist/MediaFetch-$version-win64.zip" -Force
+
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/MediaFetch.exe
+            dist/MediaFetch-*-win64.zip
             dist/MediaFetch-*-Setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

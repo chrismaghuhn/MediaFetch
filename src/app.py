@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication
 
 from services.log_service import setup_logging
@@ -12,6 +13,16 @@ from ui.i18n.translator import Translator
 from ui.main_window import MainWindow
 from ui.themes.theme_manager import ThemeManager
 from utils.fonts import load_application_fonts
+from utils.paths import app_icon_path
+
+
+def _apply_app_icon(qt_app: QApplication) -> None:
+    icon_file = app_icon_path()
+    if icon_file is None:
+        return
+    icon = QIcon(str(icon_file))
+    if not icon.isNull():
+        qt_app.setWindowIcon(icon)
 
 
 class MediaFetchApp:
@@ -21,6 +32,8 @@ class MediaFetchApp:
         self.qt_app.setOrganizationName("MediaFetch")
 
         load_application_fonts()
+
+        _apply_app_icon(self.qt_app)
 
         self.settings_service = SettingsService()
         settings = self.settings_service.settings

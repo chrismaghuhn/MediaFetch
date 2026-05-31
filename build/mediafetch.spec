@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for MediaFetch — one-file, windowed, PyQt6."""
+"""PyInstaller spec for MediaFetch — one-dir, windowed, PyQt6.
+
+FFmpeg and yt-dlp are copied to {app}/bin/ by scripts/build.py after PyInstaller
+runs so paths.resolve via exe_dir()/bin/ stays stable (one-file temp dirs do not).
+"""
 
 import os
 import sys
@@ -36,6 +40,8 @@ a = Analysis(
         (str(src / "ui" / "i18n" / "de.json"), "i18n"),
         (str(src / "ui" / "i18n" / "en.json"), "i18n"),
         (str(root / "resources" / "fonts"), "fonts"),
+        (str(root / "resources" / "icons" / "mediafetch.ico"), "icons"),
+        (str(root / "resources" / "icons" / "mediafetch.png"), "icons"),
         *pyqt6_datas,
     ],
     hiddenimports=[
@@ -67,13 +73,6 @@ a = Analysis(
     noarchive=False,
 )
 
-# Bundle ffmpeg and yt-dlp if present (TOC: dest, src, typecode)
-bin_dir = root / "resources" / "bin"
-for binary in ("ffmpeg.exe", "yt-dlp.exe"):
-    path = bin_dir / binary
-    if path.is_file():
-        a.binaries.append((f"bin/{binary}", str(path), "BINARY"))
-
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 icon_path = root / "resources" / "icons" / "mediafetch.ico"
@@ -82,17 +81,13 @@ icon = str(icon_path) if icon_path.is_file() else None
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="MediaFetch",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -101,4 +96,15 @@ exe = EXE(
     entitlements_file=None,
     icon=icon,
     version=version_info,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="MediaFetch",
 )

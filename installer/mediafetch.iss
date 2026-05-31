@@ -42,9 +42,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\dist\MediaFetch.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\resources\bin\ffmpeg.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Check: FileExists(ExpandConstant('{src}\..\resources\bin\ffmpeg.exe'))
-Source: "..\resources\bin\yt-dlp.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Check: FileExists(ExpandConstant('{src}\..\resources\bin\yt-dlp.exe'))
+; Onedir PyInstaller output (includes _internal/); bin/ holds ffmpeg + yt-dlp
+Source: "..\dist\MediaFetch\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

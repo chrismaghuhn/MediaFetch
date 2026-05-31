@@ -35,13 +35,14 @@ if (-not (Test-Path $YtdlpPath)) {
 Write-Host "Running build.py..."
 python (Join-Path $Root "scripts\build.py")
 
-$Exe = Join-Path $Root "dist\MediaFetch.exe"
+$Exe = Join-Path $Root "dist\MediaFetch\MediaFetch.exe"
 if (-not (Test-Path $Exe)) {
-    Write-Error "Build failed: dist\MediaFetch.exe not found"
+    Write-Error "Build failed: dist\MediaFetch\MediaFetch.exe not found"
 }
 
 if ($Installer) {
     & (Join-Path $Root "scripts\build_installer.ps1")
 }
 
-Write-Host "Release executable: $Exe"
+Write-Host "Release folder: $(Split-Path -Parent $Exe)"
+Write-Host "Launcher:       $Exe"

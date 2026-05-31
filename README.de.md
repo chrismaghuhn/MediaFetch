@@ -53,6 +53,29 @@ pytest
 pytest --cov=src/core --cov=src/services --cov=src/utils --cov-report=term-missing --cov-fail-under=70
 ```
 
+## Release bauen
+
+### Anwendungsordner (One-Dir)
+
+PyInstaller erzeugt ein **One-Dir**-Bundle (kein One-File): `ffmpeg.exe` und `yt-dlp.exe` müssen unter stabilen Pfaden in `{app}\bin\` neben `MediaFetch.exe` liegen. Bei One-File extrahiert PyInstaller beim Start in ein temporäres Verzeichnis — dann ist `exe_dir()/bin/ffmpeg.exe` unzuverlässig.
+
+```powershell
+python scripts\build.py
+# oder mit FFmpeg-Download:
+.\build\build_release.ps1
+```
+
+Ausgabe:
+
+- `dist\MediaFetch\MediaFetch.exe` — Starter
+- `dist\MediaFetch\_internal\` — Python-Laufzeit und Qt-Bibliotheken
+- `dist\MediaFetch\bin\` — `ffmpeg.exe`, `yt-dlp.exe` (nach PyInstaller aus `resources\bin\` kopiert)
+
+Wenn `dist\` nicht gelöscht werden kann (Dateien noch geöffnet), MediaFetch schließen oder:
+
+```powershell
+python scripts\build.py --no-clean
+```
 
 ### Installer (Inno Setup)
 
@@ -113,7 +136,7 @@ src/
 |------|-------|
 | PyQt6 | Moderne API, HiDPI, LGPL-konformes dynamisches Linking via PyInstaller |
 | yt-dlp | Einheitliche Unterstützung aller Zielplattformen, aktiv gepflegt |
-| One-File PyInstaller | Eine `MediaFetch.exe` für Endnutzer |
+| One-Dir PyInstaller | Stabiles `{app}\bin\` für FFmpeg/yt-dlp; kein One-File-Temp-Verzeichnis |
 | Inno Setup | Zweisprachiger Installer, Registry, optionale Datenbehalt-Abfrage |
 | Manuelle App-Updates | Frozen exe kann sich nicht selbst ersetzen |
 

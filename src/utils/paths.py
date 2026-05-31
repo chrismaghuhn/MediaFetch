@@ -112,3 +112,17 @@ def themes_dir() -> Path:
         if path.is_dir():
             return path
     return candidates[-1]
+
+
+def app_icon_path() -> Path | None:
+    """Return the application icon (.ico preferred, .png fallback)."""
+    candidates = [
+        resource_dir() / "icons" / "mediafetch.ico",
+        resource_dir() / "icons" / "mediafetch.png",
+        exe_dir() / "resources" / "icons" / "mediafetch.ico",
+        exe_dir() / "resources" / "icons" / "mediafetch.png",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path
+    return None
