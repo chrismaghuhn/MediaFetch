@@ -25,8 +25,6 @@ Desktop video downloader for **YouTube**, **Instagram**, and **TikTok**. Windows
 
 ## Quick start (development)
 
-On Windows, `pip` is often not on PATH. Use `python -m pip` instead:
-
 ```powershell
 cd Download-Tool
 python -m venv .venv
@@ -104,30 +102,6 @@ src/
 - Geo-blocking and rate limits can cause failures
 - Internet connection required
 
-## Publishing to GitHub
-
-Before your first release, replace the placeholder `your-org/MediaFetch` in `src/models/settings.py` (or in the app settings) with your actual repository, e.g. `your-username/MediaFetch`. Otherwise the update check will return a 404.
-
-Files that should **not** be committed (already listed in `.gitignore`):
-
-- `.venv/`, `.pytest_cache/`
-- `resources/bin/ffmpeg.exe`, `yt-dlp.exe` (~200 MB, downloaded via script)
-- `dist/`, PyInstaller build artifacts in `build/`
-- `*.zip`, `*.db`, `*.log`
-
-Initial push:
-
-```powershell
-git init
-git add .
-git status          # verify: no .venv, no ffmpeg.exe
-git commit -m "Initial commit: MediaFetch desktop app"
-git branch -M main
-git remote add origin https://github.com/YOUR-USER/MediaFetch.git
-git push -u origin main
-```
-
-Install [Git for Windows](https://git-scm.com/) if `git` is not found in your terminal. Alternatively, use [GitHub Desktop](https://desktop.github.com/).
 
 ## Legal
 
