@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# PyInstaller output
+dist/
+build/*
+!build/*.spec
+!build/*.ps1
+*.spec.bak
+
+# Tests
+.pytest_cache/
+
+# IDE / Editor
+.idea/
+.vscode/
+.cursor/
+*.swp
+
+# Env files
+.env
+.env.*
+
+# App data (local dev)
+*.db
+*.log
+
+# Bundled binaries (downloaded at build time)
+resources/bin/ffmpeg.exe
+resources/bin/yt-dlp.exe
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Release artifacts
+*.zip
