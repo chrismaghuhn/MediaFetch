@@ -65,11 +65,6 @@ python scripts\build.py
 
 Output: `dist\MediaFetch.exe`
 
-If the build fails to clean `dist\` because the exe is still running, close MediaFetch or use:
-
-```powershell
-python scripts\build.py --no-clean
-```
 
 ### Installer (Inno Setup)
 
@@ -142,32 +137,7 @@ src/
 - Geo-blocking and rate limits can cause failures
 - Internet connection required
 
-## Publishing to GitHub
 
-Remote: `https://github.com/chrismaghuhn/MediaFetch.git`
-
-**Do not commit** (already in [`.gitignore`](.gitignore)):
-
-- `.venv/`, `.pytest_cache/`, `.coverage`
-- `resources/bin/ffmpeg.exe`, `yt-dlp.exe` (~200 MB)
-- `resources/fonts/*.ttf` (use `setup_fonts.ps1`)
-- `dist/`, PyInstaller cache in `build/` (except `*.spec`, `*.ps1`)
-- `*.zip`, `*.db`, `*.log`, `*.Setup.exe`
-
-After clone, run the setup scripts from [Quick start](#quick-start-development).
-
-**Push / sync:**
-
-```powershell
-git add .
-git status    # ffmpeg.exe, dist/, .venv/, *.ttf must NOT appear
-git commit -m "Your message"
-git push -u origin main
-```
-
-If `git` is not in PATH, use `"C:\Program Files\Git\bin\git.exe"` instead.
-
-Update checks use `github_repo` in [`src/models/settings.py`](src/models/settings.py) (default: `ChrismagHuhn/MediaFetch`).
 
 ## Legal
 

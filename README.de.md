@@ -53,23 +53,6 @@ pytest
 pytest --cov=src/core --cov=src/services --cov=src/utils --cov-report=term-missing --cov-fail-under=70
 ```
 
-## Release bauen
-
-### Executable (One-File)
-
-```powershell
-python scripts\build.py
-# oder mit FFmpeg-Download:
-.\build\build_release.ps1
-```
-
-Ausgabe: `dist\MediaFetch.exe`
-
-Wenn `dist\` nicht gelöscht werden kann (exe noch geöffnet), MediaFetch schließen oder:
-
-```powershell
-python scripts\build.py --no-clean
-```
 
 ### Installer (Inno Setup)
 
@@ -142,32 +125,6 @@ src/
 - Geo-Blocking und Rate-Limits können Fehler verursachen
 - Internetverbindung erforderlich
 
-## Auf GitHub veröffentlichen
-
-Remote: `https://github.com/chrismaghuhn/MediaFetch.git`
-
-**Nicht committen** (steht in [`.gitignore`](.gitignore)):
-
-- `.venv/`, `.pytest_cache/`, `.coverage`
-- `resources/bin/ffmpeg.exe`, `yt-dlp.exe` (~200 MB)
-- `resources/fonts/*.ttf` (via `setup_fonts.ps1`)
-- `dist/`, PyInstaller-Cache in `build/` (außer `*.spec`, `*.ps1`)
-- `*.zip`, `*.db`, `*.log`, `*.Setup.exe`
-
-Nach dem Klonen die Setup-Skripte aus [Schnellstart](#schnellstart-entwicklung) ausführen.
-
-**Push / Sync:**
-
-```powershell
-git add .
-git status    # ffmpeg.exe, dist/, .venv/, *.ttf dürfen NICHT erscheinen
-git commit -m "Deine Nachricht"
-git push -u origin main
-```
-
-Falls `git` nicht im PATH ist: `"C:\Program Files\Git\bin\git.exe"` verwenden.
-
-Update-Checks nutzen `github_repo` in [`src/models/settings.py`](src/models/settings.py) (Standard: `ChrismagHuhn/MediaFetch`).
 
 ## Rechtliches
 
