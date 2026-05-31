@@ -1,15 +1,17 @@
-"""Main application window."""
+"""Main application window — Studio shell."""
 
 from __future__ import annotations
 
 import logging
 
-from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QMainWindow,
     QMessageBox,
+    QScrollArea,
+    QStackedWidget,
     QStatusBar,
-    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from core.downloader import Downloader
@@ -30,6 +32,7 @@ from ui.themes.theme_manager import ThemeManager
 from ui.widgets.history_widget import HistoryWidget
 from ui.widgets.queue_widget import QueueWidget
 from ui.widgets.settings_widget import SettingsWidget
+from ui.widgets.titlebar import Titlebar
 from ui.widgets.url_input_widget import UrlInputWidget
 
 logger = logging.getLogger(__name__)
@@ -56,64 +59,80 @@ class MainWindow(QMainWindow):
         )
 
         self._build_ui()
-        self._build_menu()
         self._connect_signals()
+        self._theme_manager.theme_changed.connect(self._on_theme_changed)
         self._restore_queue()
         self.retranslate_ui()
 
     def _build_ui(self) -> None:
-        self.setMinimumSize(900, 650)
+        self.setMinimumSize(960, 680)
+        self.menuBar().hide()
 
-        self._tabs = QTabWidget()
-        self.setCentralWidget(self._tabs)
+        root = QWidget()
+        root.setObjectName("Root")
+        root_layout = QVBoxLayout(root)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        # Download tab
-        from PyQt6.QtWidgets import QVBoxLayout, QWidget
+        self._titlebar = Titlebar()
+        root_layout.addWidget(self._titlebar)
 
-        download_page = QWidget()
-        download_layout = QVBoxLayout(download_page)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(scroll.Shape.NoFrame)
+        scroll.setProperty("data-mf-scroll", "true")
 
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(18, 18, 18, 18)
+        scroll_layout.setSpacing(16)
+
+        self._stack = QStackedWidget()
+
+        queue_page = QWidget()
+        queue_layout = QVBoxLayout(queue_page)
+        queue_layout.setContentsMargins(0, 0, 0, 0)
+        queue_layout.setSpacing(16)
         self._url_input = UrlInputWidget()
-        download_layout.addWidget(self._url_input)
-
+        queue_layout.addWidget(self._url_input)
         self._queue_widget = QueueWidget(self._queue)
-        download_layout.addWidget(self._queue_widget)
-
-        self._tabs.addTab(download_page, tr("queue.title"))
+        queue_layout.addWidget(self._queue_widget)
+        queue_layout.addStretch()
+        self._stack.addWidget(queue_page)
 
         self._history_widget = HistoryWidget(self._history)
-        self._tabs.addTab(self._history_widget, tr("history.title"))
+        self._stack.addWidget(self._history_widget)
 
         self._settings_widget = SettingsWidget(
             self._settings_service,
             self._theme_manager,
             on_saved=self._on_settings_saved,
+            on_retranslate=self.retranslate_ui,
         )
-        self._tabs.addTab(self._settings_widget, tr("settings.title"))
+        self._stack.addWidget(self._settings_widget)
+
+        scroll_layout.addWidget(self._stack)
+        scroll.setWidget(scroll_content)
+        root_layout.addWidget(scroll)
+
+        self.setCentralWidget(root)
 
         self._status = QStatusBar()
         self.setStatusBar(self._status)
         self._status.showMessage(tr("app.ready"))
 
-    def _build_menu(self) -> None:
-        menubar = self.menuBar()
-
-        file_menu = menubar.addMenu("")
-        self._quit_action = QAction("", self)
-        self._quit_action.triggered.connect(self.close)
-        file_menu.addAction(self._quit_action)
-
-        help_menu = menubar.addMenu("")
-        self._update_action = QAction("", self)
-        self._update_action.triggered.connect(self._check_updates_manual)
-        help_menu.addAction(self._update_action)
-
-        self._file_menu = file_menu
-        self._help_menu = help_menu
-
     def _connect_signals(self) -> None:
+        self._titlebar.tab_changed.connect(self._stack.setCurrentIndex)
+        self._titlebar.updates_requested.connect(self._check_updates_manual)
+        self._titlebar.quit_requested.connect(self.close)
         self._url_input.add_button.clicked.connect(self._on_add_urls)
         self._queue.validation_failed.connect(self._on_validation_failed)
+
+    def _on_theme_changed(self, _mode: str, _accent: str, accent_only: bool) -> None:
+        self._queue_widget.refresh_theme(
+            self._theme_manager.tokens,
+            accent_only=accent_only,
+        )
 
     def _restore_queue(self) -> None:
         if self._settings_service.settings.restore_queue_on_startup:
@@ -160,7 +179,13 @@ class MainWindow(QMainWindow):
                     if age_dialog.exec() != AgeWarningDialog.DialogCode.Accepted:
                         continue
 
-                item = DownloadItem(url=url, options=options, video_info=info, title=info.title)
+                item = DownloadItem(
+                    url=url,
+                    options=options,
+                    video_info=info,
+                    title=info.title,
+                    platform=info.platform,
+                )
                 items.append(item)
             except Exception as exc:
                 logger.exception("Failed to validate %s", url)
@@ -201,20 +226,24 @@ class MainWindow(QMainWindow):
     def _check_updates_manual(self) -> None:
         from services.update_service import UpdateService
 
-        service = UpdateService(self._settings_service.settings.github_repo)
-        service.check_and_notify(self)
+        service = UpdateService(
+            self._settings_service.settings.github_repo,
+            self._settings_service.settings,
+        )
+        service.check_and_notify(
+            self,
+            self._settings_service.settings,
+            self._settings_service,
+        )
 
     def retranslate_ui(self) -> None:
         self.setWindowTitle(tr("app.title"))
-        self._file_menu.setTitle(tr("menu.file"))
-        self._quit_action.setText(tr("menu.quit"))
-        self._help_menu.setTitle(tr("menu.help"))
-        self._update_action.setText(tr("menu.check_updates"))
-        self._tabs.setTabText(0, tr("queue.title"))
-        self._tabs.setTabText(1, tr("history.title"))
-        self._tabs.setTabText(2, tr("settings.title"))
-        self._status.showMessage(tr("app.ready"))
+        self._titlebar.retranslate()
+        self._url_input.retranslate()
         self._queue_widget.retranslate()
+        self._history_widget.retranslate()
+        self._settings_widget.retranslate()
+        self._status.showMessage(tr("app.ready"))
 
     def closeEvent(self, event) -> None:
         self._queue.save_queue()

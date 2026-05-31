@@ -18,6 +18,23 @@ build/*
 
 # Tests
 .pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# PyInstaller generated
+build/version_info.txt
+
+# Build leftovers (locked exe rename)
+*.exe.stale
+
+# Downloaded fonts (use scripts/setup_fonts.ps1)
+resources/fonts/*.ttf
+resources/fonts/*.otf
+!resources/fonts/.gitkeep
+
+# Installer output (dist/ already ignored; explicit for clarity)
+*.Setup.exe
 
 # IDE / Editor
 .idea/

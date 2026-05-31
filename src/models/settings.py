@@ -21,11 +21,14 @@ class AppSettings:
     max_retries: int = 3
     default_quality: int = 1080
     include_subtitles: bool = False
-    log_path: str = field(default_factory=lambda: str(default_log_dir() / "app.log"))
+    log_path: str = field(default_factory=lambda: str(default_log_dir() / "mediafetch.log"))
     restore_queue_on_startup: bool = True
     check_updates_on_startup: bool = True
-
+    accent_color: str = "#ff5436"
     github_repo: str = "ChrismagHuhn/MediaFetch"
+    log_level: str = "INFO"
+    skipped_version: str = ""
+    remind_update_after: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)

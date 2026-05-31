@@ -1,14 +1,12 @@
-# MediaFetch release build script for Windows
-# Downloads FFmpeg, runs PyInstaller, creates ZIP for GitHub Releases
-
+# MediaFetch release build — exe + optional installer
 param(
-    [switch]$SkipFfmpeg
+    [switch]$SkipFfmpeg,
+    [switch]$Installer
 )
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $BinDir = Join-Path $Root "resources\bin"
-$DistDir = Join-Path $Root "dist\MediaFetch"
 
 New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 
@@ -25,37 +23,25 @@ if (-not $SkipFfmpeg) {
         Copy-Item $FfmpegSrc.FullName -Destination $FfmpegPath
         Remove-Item $TempZip -Force -ErrorAction SilentlyContinue
         Remove-Item $TempExtract -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "FFmpeg saved to $FfmpegPath"
     }
 }
 
 $YtdlpPath = Join-Path $BinDir "yt-dlp.exe"
 if (-not (Test-Path $YtdlpPath)) {
     Write-Host "Downloading yt-dlp.exe..."
-    $YtdlpUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
-    Invoke-WebRequest -Uri $YtdlpUrl -OutFile $YtdlpPath
-    Write-Host "yt-dlp saved to $YtdlpPath"
+    Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile $YtdlpPath
 }
 
-Write-Host "Running PyInstaller..."
-Push-Location $Root
-try {
-    python -m PyInstaller build\mediafetch.spec --noconfirm
-} finally {
-    Pop-Location
+Write-Host "Running build.py..."
+python (Join-Path $Root "scripts\build.py")
+
+$Exe = Join-Path $Root "dist\MediaFetch.exe"
+if (-not (Test-Path $Exe)) {
+    Write-Error "Build failed: dist\MediaFetch.exe not found"
 }
 
-if (-not (Test-Path $DistDir)) {
-    Write-Error "Build failed: dist\MediaFetch not found"
+if ($Installer) {
+    & (Join-Path $Root "scripts\build_installer.ps1")
 }
 
-# Copy binaries into dist
-Copy-Item $BinDir\ffmpeg.exe -Destination (Join-Path $DistDir "bin") -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Force -Path (Join-Path $DistDir "bin") | Out-Null
-Copy-Item $BinDir\ffmpeg.exe -Destination (Join-Path $DistDir "bin\ffmpeg.exe") -Force
-Copy-Item $BinDir\yt-dlp.exe -Destination (Join-Path $DistDir "bin\yt-dlp.exe") -Force
-
-$ZipPath = Join-Path $Root "dist\MediaFetch-win64.zip"
-if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
-Compress-Archive -Path $DistDir -DestinationPath $ZipPath
-Write-Host "Release ZIP: $ZipPath"
+Write-Host "Release executable: $Exe"

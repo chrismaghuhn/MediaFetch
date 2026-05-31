@@ -21,7 +21,8 @@ Desktop video downloader for **YouTube**, **Instagram**, and **TikTok**. Windows
 
 - Windows 10/11
 - Python 3.10+ (get it from [python.org](https://www.python.org/downloads/) or the Microsoft Store)
-- FFmpeg (bundled automatically for releases)
+- [Git for Windows](https://git-scm.com/) (for cloning and pushing)
+- FFmpeg and fonts (downloaded via setup scripts below)
 
 ## Quick start (development)
 
@@ -29,28 +30,66 @@ Desktop video downloader for **YouTube**, **Instagram**, and **TikTok**. Windows
 cd Download-Tool
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m pip install pyinstaller pytest
+python -m pip install -r requirements-dev.txt
 .\scripts\setup_dev.ps1
+.\scripts\setup_fonts.ps1
 python src\main.py
 ```
 
-`setup_dev.ps1` downloads FFmpeg into `resources\bin\` — required for YouTube video downloads.
+- `setup_dev.ps1` downloads FFmpeg to `resources\bin\` (required for YouTube video downloads)
+- `setup_fonts.ps1` downloads Space Grotesk/Mono fonts to `resources\fonts\`
 
 Without activating the venv:
 
 ```powershell
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 python src\main.py
+```
+
+## Running tests
+
+```powershell
+pytest
+pytest --cov=src/core --cov=src/services --cov=src/utils --cov-report=term-missing --cov-fail-under=70
 ```
 
 ## Building a release
 
+### Executable (one-file)
+
 ```powershell
+python scripts\build.py
+# or with FFmpeg download:
 .\build\build_release.ps1
 ```
 
-Output: `dist\MediaFetch\MediaFetch.exe` and `dist\MediaFetch-win64.zip`
+Output: `dist\MediaFetch.exe`
+
+If the build fails to clean `dist\` because the exe is still running, close MediaFetch or use:
+
+```powershell
+python scripts\build.py --no-clean
+```
+
+### Installer (Inno Setup)
+
+Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then:
+
+```powershell
+.\build\build_release.ps1 -Installer
+# or after building the exe:
+.\scripts\build_installer.ps1
+```
+
+Output: `dist\MediaFetch-{version}-Setup.exe`
+
+### Release workflow
+
+1. Bump version in [`src/version.py`](src/version.py)
+2. Run tests with coverage (see above)
+3. Build exe and installer
+4. Tag and push: `git tag v1.0.0 && git push origin v1.0.0`
+5. GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)) uploads release assets
 
 ## Usage
 
@@ -91,7 +130,8 @@ src/
 |--------|--------|
 | PyQt6 | Modern API, HiDPI, LGPL-compatible dynamic linking via PyInstaller |
 | yt-dlp | Unified support for all target platforms, actively maintained |
-| `--onedir` PyInstaller | Reliable bundling of FFmpeg and yt-dlp binaries |
+| One-file PyInstaller | Single `MediaFetch.exe` for end users |
+| Inno Setup | Bilingual installer, registry entries, optional data retention on uninstall |
 | Manual app updates | Frozen exe cannot replace itself while running |
 
 ## Limitations
@@ -102,6 +142,32 @@ src/
 - Geo-blocking and rate limits can cause failures
 - Internet connection required
 
+## Publishing to GitHub
+
+Remote: `https://github.com/chrismaghuhn/MediaFetch.git`
+
+**Do not commit** (already in [`.gitignore`](.gitignore)):
+
+- `.venv/`, `.pytest_cache/`, `.coverage`
+- `resources/bin/ffmpeg.exe`, `yt-dlp.exe` (~200 MB)
+- `resources/fonts/*.ttf` (use `setup_fonts.ps1`)
+- `dist/`, PyInstaller cache in `build/` (except `*.spec`, `*.ps1`)
+- `*.zip`, `*.db`, `*.log`, `*.Setup.exe`
+
+After clone, run the setup scripts from [Quick start](#quick-start-development).
+
+**Push / sync:**
+
+```powershell
+git add .
+git status    # ffmpeg.exe, dist/, .venv/, *.ttf must NOT appear
+git commit -m "Your message"
+git push -u origin main
+```
+
+If `git` is not in PATH, use `"C:\Program Files\Git\bin\git.exe"` instead.
+
+Update checks use `github_repo` in [`src/models/settings.py`](src/models/settings.py) (default: `ChrismagHuhn/MediaFetch`).
 
 ## Legal
 
