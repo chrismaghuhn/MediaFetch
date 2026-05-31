@@ -51,12 +51,51 @@ jobs:
       - name: Package portable folder
         shell: pwsh
         run: |
-          $version = (Select-String -Path src/version.py -Pattern '__version__\s*=\s*"([^"]+)"').Matches.Groups[1].Value
+          $line = Get-Content src/version.py | Where-Object { $_ -like '*__version__*' } | Select-Object -First 1
+          if ($line -match '__version__\s*=\s*"(.+?)"') {
+            $version = $Matches[1]
+          } else {
+            throw "Could not read __version__ from src/version.py"
+          }
           Compress-Archive -Path dist/MediaFetch -DestinationPath "dist/MediaFetch-$version-win64.zip" -Force
+
+      - name: Prepare release notes
+        shell: pwsh
+        id: release_meta
+        run: |
+          $line = Get-Content src/version.py | Where-Object { $_ -like '*__version__*' } | Select-Object -First 1
+          if ($line -match '__version__\s*=\s*"(.+?)"') {
+            $version = $Matches[1]
+          } else {
+            throw "Could not read __version__ from src/version.py"
+          }
+          $setup = Get-ChildItem dist/MediaFetch-*-Setup.exe | Select-Object -First 1
+          if (-not $setup) { throw "Setup exe not found in dist/" }
+          $sha256 = (Get-FileHash $setup.FullName -Algorithm SHA256).Hash.ToLower()
+          $body = @"
+          ## MediaFetch $version
+
+          First public release for Windows 10/11.
+
+          ### Downloads
+          - **Installer:** MediaFetch-$version-Setup.exe (recommended)
+          - **Portable:** MediaFetch-$version-win64.zip
+
+          ### Features
+          - YouTube, Instagram, TikTok downloads
+          - Queue, history, DE/EN UI, dark/light theme
+          - Bundled FFmpeg + yt-dlp (One-Dir layout)
+
+          SHA256: $sha256
+          "@.Trim()
+          "body<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
+          $body | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
+          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8NoBOM
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
+          body: ${{ steps.release_meta.outputs.body }}
           files: |
             dist/MediaFetch-*-win64.zip
             dist/MediaFetch-*-Setup.exe
