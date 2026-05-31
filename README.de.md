@@ -25,7 +25,6 @@ Desktop-Video-Downloader für **YouTube**, **Instagram** und **TikTok**. Nur fü
 
 ## Schnellstart (Entwicklung)
 
-Unter Windows ist `pip` oft nicht im PATH. Stattdessen `python -m pip` verwenden:
 
 ```powershell
 cd Download-Tool
@@ -115,19 +114,6 @@ Diese Dateien gehören **nicht** ins Repository (stehen bereits in `.gitignore`)
 - `dist/`, PyInstaller-Zwischendateien in `build/`
 - `*.zip`, `*.db`, `*.log`
 
-Erster Push:
-
-```powershell
-git init
-git add .
-git status          # prüfen: keine .venv, kein ffmpeg.exe
-git commit -m "Initial commit: MediaFetch desktop app"
-git branch -M main
-git remote add origin https://github.com/DEIN-USER/MediaFetch.git
-git push -u origin main
-```
-
-Falls `git` in der Konsole nicht gefunden wird: [Git for Windows](https://git-scm.com/) installieren oder [GitHub Desktop](https://desktop.github.com/) nutzen.
 
 ## Rechtliches
 
